@@ -167,7 +167,14 @@ Book_Reuse/
 │       └── lib/                  纯函数工具
 │
 ├── tests/unit/                 单元测试
-├── supabase/                   迁移与 Edge Functions（阶段 2 创建）
+├── supabase/                   数据库（阶段 2 已交付）
+│   ├── config.toml               Supabase CLI 配置
+│   ├── migrations/              9 个版本化迁移：24 表 + 16 枚举 + 68 条 RLS 策略
+│   ├── seed.sql                 种子数据（全部为示例数据，禁止在生产执行）
+│   └── tests/rls_test.sql       RLS 安全测试（上线前必须全部通过）
+├── tools/                      项目工具脚本
+│   ├── check_migrations.py      迁移 SQL 静态审查
+│   └── git_commit.py            以 UTF-8 无 BOM 写入提交信息
 ├── docker/                     自托管 Supabase 配置（阶段 9 创建）
 │
 ├── .githooks/pre-commit        提交前敏感信息扫描
@@ -259,8 +266,8 @@ docs(readme): 补充环境变量配置说明
 |---|---|---|
 | 0 | PRD、技术方案、安全合规、数据模型、页面清单 | ✅ 已完成 |
 | 1 | 工程初始化、Supabase 客户端、环境变量、ESLint 规范 | ✅ 已完成 |
-| 2 | Supabase 迁移 SQL（24 表 + RLS + 种子数据） | ⏳ 下一步 |
-| 3 | 认证与用户档案 | ⏸ 待开始 |
+| 2 | Supabase 迁移 SQL（24 表 + 16 枚举 + 68 条 RLS 策略 + 种子数据 + 测试脚本） | ✅ 已完成 |
+| 3 | 认证与用户档案 | ⏳ 下一步 |
 | 4 | 图书市场与详情页 | ⏸ 待开始 |
 | 5 | 发布/回收流程（含 AI 品相识别占位） | ⏸ 待开始 |
 | 6 | 订单、租赁、碳账户与积分 | ⏸ 待开始 |
@@ -271,8 +278,9 @@ docs(readme): 补充环境变量配置说明
 
 ### 已知限制
 
-- **数据库尚未创建**：当前 Supabase 项目为空库，阶段 2 交付迁移
-- **Element Plus 全量引入**：构建产物中该 chunk 约 985 KB（gzip 317 KB），后续可改为按需引入优化
+- **迁移尚未在真实环境执行**：迁移文件已生成并通过静态审查，但本机无 Postgres/Docker，
+  **未实际执行过**。请在 Supabase 侧按 [`supabase/README.md`](./supabase/README.md) 执行并运行 RLS 测试。
+- **Element Plus 全量引入**：构建产物中该 chunk 约 985 KB（gzip 317 KB），阶段 4 改为按需引入优化
 - **无微信小程序端**：当前为纯 Web；如需小程序需评估 uni-app/Taro 适配成本
 
 ## 许可证

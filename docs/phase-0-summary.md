@@ -17,7 +17,7 @@
 | 1 | [`docs/PRD.md`](./PRD.md) | 产品需求文档：定位、8 类角色、48 项功能、定价模型、碳测算、非功能需求、排除范围 | 约 300 行 |
 | 2 | [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) | 技术方案：技术栈版本、FSD 完整目录树、类型安全策略、环境管理、6 条 ADR、测试策略 | 约 350 行 |
 | 3 | [`docs/security-compliance.md`](./security-compliance.md) | 安全合规：数据分级、加密、隐私政策要点、Supabase 加固清单、迁移流程、可观测性、等保 2.0 适配、技术债 | 约 400 行 |
-| 4 | [`docs/data-model.md`](./data-model.md) | 数据模型：24 张表、15 个枚举、逐表 RLS 策略、ER 图（Mermaid + 文字版）、种子数据清单 | 约 700 行 |
+| 4 | [`docs/data-model.md`](./data-model.md) | 数据模型：24 张表、16 个枚举、逐表 RLS 策略、ER 图（Mermaid + 文字版）、种子数据清单 | 约 700 行 |
 | 5 | [`docs/page-list.md`](./page-list.md) | 页面清单：38 个页面（路由/优先级/依赖/阶段映射）、导航结构、移动端断点 | 约 250 行 |
 | 6 | [`docs/phase-0-summary.md`](./phase-0-summary.md) | 本文件：交付总览与待确认事项 | — |
 | 7 | `docs/_bp_extract.md` | 商业计划书全文提取（17,201 字，39 表）作为设计依据留档 | 475 行 |
@@ -40,7 +40,7 @@
 
 ### 3.3 数据库
 
-24 张表分 6 组，15 个枚举类型，每表配套 4 类 RLS 策略。
+24 张表分 6 组，16 个枚举类型，共 68 条 RLS 策略（阶段 2 已落地）。
 在你指定的 19 张表之外，**补充了 5 张业务必需表**（`order_items`、`rentals`、`donations`、`user_addresses`、`book_categories`），原因见 data-model.md 第 1 节。
 
 ### 3.4 三个必须由你决策的前置问题

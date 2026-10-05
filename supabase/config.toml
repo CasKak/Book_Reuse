@@ -1,0 +1,81 @@
+# Supabase 本地开发配置
+#
+# 说明：
+#   · 这是 Supabase CLI 的配置文件，供 `supabase start` / `db reset` 使用
+#   · project_id 用于本地实例标识，与远程项目 ref 无关
+#   · 本文件不含任何密钥，可安全入库
+#
+# 常用命令：
+#   supabase start          启动本地实例（需 Docker）
+#   supabase db reset       重建数据库并执行 migrations + seed.sql
+#   supabase db diff        对比本地与迁移文件的结构差异
+#   supabase gen types      生成 TypeScript 类型（见下方 scripts）
+#   supabase stop           停止本地实例
+
+project_id = "Book_Reuse"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+# 主版本与 Supabase 托管实例保持一致，避免本地通过、线上失败的语法差异
+major_version = 15
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+# 文件大小上限 50MB：图书封面与品相照片足够，且限制滥用
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:5173"
+additional_redirect_urls = ["http://127.0.0.1:5173", "http://localhost:5173"]
+# 本地开发关闭邮箱确认，便于快速创建测试账号
+enable_confirmations = false
+# 密码强度：与前端提示保持一致
+minimum_password_length = 8
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[analytics]
+enabled = false
+
+# ---------------------------------------------------------------------------
+# 类型生成脚本
+# ---------------------------------------------------------------------------
+# 用途：迁移变更后重新生成 src/shared/api/database.types.ts
+# 执行：supabase gen types typescript --local > src/shared/api/database.types.ts
+#      或对远程：supabase gen types typescript --project-id <ref> > ...
+# ---------------------------------------------------------------------------
+[functions.calculate-price]
+enabled = false      # 阶段后续实现
+
+[functions.settle-carbon]
+enabled = false      # 阶段后续实现
+
+[functions.locker-webhook]
+enabled = false      # 阶段后续实现

@@ -10,8 +10,111 @@
 ## [未发布]
 
 ### 计划中
-- 阶段 2：Supabase 迁移 SQL（24 表）+ RLS 策略 + 种子数据（预计 `v0.3.0`）
 - 阶段 3：认证与用户档案模块
+- 阶段 4：图书市场与详情页（同时把 Element Plus 改为按需引入）
+
+---
+
+## [v0.3.0] - 2026-10-06
+
+**主题：阶段 2 —— Supabase 数据库迁移、RLS 安全策略与种子数据**
+
+> ⚠️ 本版本**只生成迁移文件，未对任何数据库执行**。执行步骤见 `supabase/README.md`。
+
+### 新增：数据库迁移（9 个文件）
+
+| 迁移文件 | 内容 |
+|---|---|
+| `0001_extensions_and_helpers.sql` | pgcrypto / pg_trgm 扩展；`set_updated_at`；7 个权限辅助函数 |
+| `0002_enums.sql` | **16 个枚举类型** |
+| `0003_tables_users_schools.sql` | A 组 5 表：schools、majors、courses、profiles、user_addresses |
+| `0004_tables_books_orders.sql` | B 组 8 表：book_categories、books、listings、orders、order_items、recycle_requests、rentals、donations |
+| `0005_tables_carbon_coupons.sql` | C 组 3 表：campaigns、carbon_records、user_coupons |
+| `0006_tables_lockers.sql` | D 组 3 表：smart_lockers、locker_usage_logs、condition_images |
+| `0007_tables_pricing_support.sql` | E+F 组 5 表：pricing_rules、sensitivity_analysis、cashflow_forecast、notifications、audit_logs |
+| `0008_rls_policies.sql` | **68 条 RLS 策略**，覆盖全部 24 张表 |
+| `0009_integrity_constraints.sql` | 状态机、风控触发器、表级权限授予、`place_order` 下单事务函数 |
+
+- **24 张表**全部启用 `ROW LEVEL SECURITY` **并加 `FORCE`**
+- 每表含主键、外键、索引、默认值、约束与时间戳；金额统一 `numeric(12,2)`
+- 中文书名检索采用 `pg_trgm` 三元组 GIN 索引（tsvector 不适用于中文分词）
+
+### 新增：RLS 策略设计要点
+
+- **只增不改的四张表**不提供任何写策略，仅 `service_role` 可写：
+  `carbon_records`（防伪造碳数据）、`user_coupons`（防自行造券）、
+  `locker_usage_logs`（仅硬件 webhook）、`audit_logs`（等保要求不可篡改）
+- **列级防护触发器**（RLS 无法按列授权，用 BEFORE UPDATE 补足）：
+  - `trg_profiles_protect_sensitive` —— 阻止用户自行修改 role、verify_status、
+    credit_score、points_balance、carbon_total_kg、blacklist_reason
+  - `trg_notifications_protect_columns` —— 普通用户只能改通知的已读状态
+- **商业机密隔离**：`pricing_rules`、`sensitivity_analysis`、`cashflow_forecast`
+  仅运营/管理员可见，且未对 `anon` 授予任何权限（定价系数是核心竞争力）
+
+### 新增：业务风控落库
+
+| 约束 | 对应商业计划书 |
+|---|---|
+| 未通过 ISBN 校验的书目禁止上架 | 9.1 节版权风控第一层 |
+| AI 低置信度转人工复核队列 | 9.1 节版权风控第二层 |
+| 黑名单用户禁止发布与交易 | 9.1 节 |
+| 碳减排系数必须带来源且数值自洽 | 10.1 节「数据可核验」 |
+| 订单状态机阻止跳级 | 交易安全 |
+| 同一卖家不可重复上架同一书目 | 防超卖 |
+| 租赁押金 = 售价 80% 校验 | 4.2.2 节 |
+| 订单完成后清空取件码 | 最小化凭据留存 |
+
+### 新增：`place_order` 下单事务函数
+
+- 金额全部由服务端计算，前端传参一律忽略
+- `SELECT ... FOR UPDATE` 锁定商品行，防并发超卖
+- 原子完成「校验状态 → 写订单 → 写明细 → 商品置为已预定」
+
+### 新增：种子数据 `supabase/seed.sql`
+
+- 3 所示例学校、7 个专业、12 门课程、15 个图书分类
+- 17 条书目（其中 2 条 `is_verified = false`，用于验证版权风控拦截）
+- 11 条挂牌（覆盖 5 种品相 × 4 种交易类型）
+- 14 条定价规则、8 条敏感性分析、6 期现金流预测（均标注为示例值并附来源说明）
+- 6 个测试账号（涵盖学生 / 校园大使 / 运营 / 管理员 / 待认证学生）
+- ⚠️ 全部为示例数据，正式使用前必须替换；**禁止在生产执行**
+
+### 新增：RLS 安全测试 `supabase/tests/rls_test.sql`
+
+- **47 项断言**，覆盖 11 类场景：基础检查、匿名、学生隔离、未认证限制、
+  版权风控、提权防护、订单可见性、只增不改、运营权限、管理员权限、结构级检查
+- **关键实现**：用 `SET LOCAL ROLE` 切换到 `anon` / `authenticated` 角色。
+  若只设置 JWT 声明而不切角色，测试以超级用户身份运行会**绕过 RLS**，
+  导致所有断言假性通过——脚本内置「★ 方法自检」项专门验证这一点
+
+### 新增：工具与文档
+
+- `tools/check_migrations.py` —— 迁移 SQL 静态审查（9 类检查：表/枚举数量、
+  RLS 启用与覆盖、只增不改表的写权限、机密表匿名可见性、外键顺序、
+  块注释完整性、扩展函数引用、危险语句扫描）
+- `supabase/config.toml` —— Supabase CLI 本地开发配置
+- `supabase/README.md` —— 迁移执行流程、RLS 设计说明、测试账号、常见问题、上线检查清单
+
+### 修复
+- 修正 `place_order` 中把 `listing_id` 误写入 `locker_id` 的错误，改为独立的柜体参数
+- 移除扩展的显式 `with schema extensions`：该写法会使 `gen_random_uuid()`
+  的解析依赖 search_path，而函数内固定了 `search_path = public` 导致建表失败
+- 修正文档中枚举数量的笔误（15 → 16）
+
+### 验证结果
+
+| 检查项 | 结果 |
+|---|---|
+| 静态审查（`tools/check_migrations.py`） | 通过：24 表 / 16 枚举 / 68 策略 / 24 表全部 enable+force |
+| 只增不改表写权限 | 通过：4 张表均未对 authenticated 授予写权限 |
+| 商业机密表匿名可见性 | 通过：3 张表均未对 anon 授予权限 |
+| 外键引用顺序 | 通过 |
+| 危险语句扫描 | 通过（无 drop/truncate/disable RLS/无 where 的删改） |
+| **真实执行** | **未执行** —— 本机无 Postgres/Docker，需在 Supabase 侧执行 |
+
+### 已知限制
+- 迁移与 RLS 测试**均未在真实数据库运行过**，仅通过静态审查。
+  首次执行请务必在本地或预发布环境跑通 `rls_test.sql` 后再考虑生产。
 
 ---
 
