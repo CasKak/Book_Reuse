@@ -10,8 +10,109 @@
 ## [未发布]
 
 ### 计划中
-- 阶段 3：认证与用户档案模块
 - 阶段 4：图书市场与详情页（同时把 Element Plus 改为按需引入）
+- 阶段 5：发布/回收流程（含 AI 品相识别占位）
+
+---
+
+## [v0.4.0] - 2026-10-06
+
+**主题：阶段 3 —— 认证与用户档案模块**
+
+### 新增：shared 层基础能力
+- `src/shared/api/database.types.ts` 由占位替换为**完整 24 张表的类型定义**
+  - 含 16 个枚举、profiles_public 视图、place_order 等函数签名
+  - ⚠️ 关键点：数据库结构必须用 `type` 而非 `interface`。
+    Supabase 的 GenericTable 约束要求 Row/Insert/Update 可赋值给
+    `Record<string, unknown>`，interface 没有隐式索引签名，
+    会导致所有查询入参类型退化为 `never`（表现为「参数不能赋给 never」编译错误）
+- `src/shared/api/client.ts` 统一 API 客户端
+  - `ApiError` 类：把 PostgreSQL SQLSTATE 与 PostgREST 错误码映射为
+    6 类可读错误（unauthenticated / forbidden / conflict / not_found /
+    invalid / rate_limited / network / unknown）
+  - **优先透出中文信息**：数据库触发器与约束用中文 raise exception
+    （如「书目未通过 ISBN 权威库校验，禁止上架」），这类信息对用户最有价值
+  - `run()` / `runOrNull()`：统一错误处理，区分「可选数据」与「必须成功」
+
+### 新增：entities/user 切片
+- `model/types.ts` 展示辅助（纯函数，已单元测试覆盖）
+  - `maskPhone` 手机号脱敏（PIPL 合规：界面与日志一律脱敏）
+  - `gradeLabel` 年级中文转换、`roleLabel` 角色中文映射
+  - `toUserProfileViewModel` 档案 → 视图模型，`canPublish` 综合
+    「已认证 + 未拉黑」两个条件
+  - `toPublicProfileViewModel` 公开档案视图模型（不含任何敏感字段）
+- `model/schema.ts` Zod 校验（前后端可复用同一份规则）
+  - 密码规则与 supabase/config.toml 的 minimum_password_length = 8 对齐，
+    并要求字母 + 数字组合
+  - `registerSchema` 强制 `agreed: z.literal(true)`：用户协议与隐私政策
+    **必须手动勾选**，不得默认勾选（PIPL 要求）
+  - `addressSchema` 楼栋必填、补充说明限 60 字（减少敏感信息泄漏面）
+- `model/store.ts` 会话状态
+  - 会话来源始终以 Supabase Auth 为准，不重复存储 token，
+    避免「前端认为已登录但 token 已失效」
+  - `subscribeAuthChanges` 同步多标签页登出与 token 续期
+- `api/auth.ts` 数据访问（14 个语义化方法）
+  - 登录失败统一提示，不区分账号不存在与密码错误（防账号枚举）
+  - `updateProfile` 使用 `TableUpdate<'profiles'>` 而非索引签名类型，
+    因为 Supabase 的 update() 会拒绝索引签名（RejectExcessProperties）
+
+### 新增：features 层 5 个切片
+| 切片 | 内容 |
+|---|---|
+| `auth-login` | 登录表单，支持 `?redirect=` 跳回原页面 |
+| `auth-register` | 注册表单，学校→专业联动，协议强制勾选 |
+| `auth-logout` | 退出按钮（二次确认，请求失败也清空本地状态） |
+| `profile-edit` | 资料表单，只提交用户可改字段 |
+| `address-book` | 地址增删改查 + 默认地址切换 |
+
+### 新增：页面与路由（7 个新页面）
+- `/auth/login`、`/auth/register`、`/auth/forgot-password`、`/auth/reset-password`
+- `/my/profile`（个人中心：认证状态、数据概览、权限说明、资料表单）
+- `/my/addresses`（地址管理）
+- 全局路由守卫：`meta.requiresAuth` / `meta.requiresStaff` +
+  路由 meta 类型声明（扩展 `RouteMeta`，使 `to.meta.title` 有类型）
+- 顶栏登录态：未登录显示登录/注册，已登录显示头像与下拉菜单
+
+### 安全与合规落地
+- **防账号枚举**：登录失败与找回密码均不区分账号是否存在
+- **敏感字段保护**：个人中心手机号脱敏展示；公开档案视图不含 phone 与 blacklist_reason
+- **权限说明透明**：个人中心明确列出「当前可以做什么、不可以做什么」
+- **黑名单可见**：因版权违规被限制的用户能看到原因（对应商业计划书 9.1 节）
+- **碳数据标注**：碳减排量旁标注「系数取自示例参数，尚未经 LCA 实测校准」
+- **地址最小化**：只采集到楼栋层级，表单内提示勿填写门牌号等信息
+
+### 单元测试
+- 新增 54 个用例（`user-types` 22 个、`user-schema` 32 个）
+- 累计 **72 个用例全部通过**
+- 覆盖要点：手机号脱敏不泄漏明文、黑名单用户不可发布、
+  密码强度校验、协议必须勾选、地址必填校验
+
+### 修复
+- `database.types.ts` 由 interface 改为 type（见上文关键点）
+- `ApiError` 的 `name` 与 `cause` 补 `override` 修饰符
+  （`cause` 是 ES2022 Error 的既有属性）
+- Zod v4 的 `z.literal` 第二参数由 `errorMap` 改为 `error`
+- 注册页移除未使用的 `RouterLink` 导入（`noUnusedLocals` 报错）
+
+### 验证结果
+
+| 检查项 | 结果 |
+|---|---|
+| `pnpm typecheck` | 通过，0 错误 |
+| `pnpm lint` | 通过，0 error / 0 warning |
+| `pnpm format:check` | 通过 |
+| `pnpm test` | 72 个用例全部通过（新增 54 个） |
+| `pnpm build` | 构建成功，路由级代码分割生效（每页 2-25 KB） |
+| 浏览器实测 | 登录页、注册页正常渲染；未登录访问 `/my/profile` 正确重定向到登录页 |
+
+### 已知限制
+- **数据库尚未创建**：迁移文件已就绪但未执行，因此注册/登录/资料保存
+  **无法端到端验证**。需先在 Supabase 侧执行迁移与种子数据，
+  再用 `student.a@example.com` / `Test@123456` 实测完整流程。
+- **学生证上传未实现**：认证按钮当前只把状态置为 pending；
+  真实上传需接 Storage 私有桶 + PIPIA 评估
+- **Element Plus 仍为全量引入**：该 chunk 985 KB（gzip 317 KB），
+  阶段 4 改为按需引入
 
 ---
 
