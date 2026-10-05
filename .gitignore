@@ -1,0 +1,109 @@
+# ---------------- 依赖与包管理 ----------------
+node_modules/
+.pnpm-store/
+.yarn/
+jspm_packages/
+bower_components/
+vendor/
+package-lock.json.bak
+
+# ---------------- 构建产物 ----------------
+.next/
+out/
+dist/
+build/
+.nuxt/
+.output/
+.turbo/
+.vercel/
+.netlify/
+*.tsbuildinfo
+
+# ---------------- 环境变量与密钥 ----------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials.json
+serviceAccountKey.json
+
+# ---------------- 日志与缓存 ----------------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.pid
+*.seed
+.cache/
+.eslintcache
+.stylelintcache
+.parcel-cache/
+coverage/
+.nyc_output/
+
+# ---------------- Python ----------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+ENV/
+.python-version
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.eggs/
+
+# ---------------- 编辑器与 IDE ----------------
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------------- Office / 文档临时文件 ----------------
+~$*.docx
+~$*.xlsx
+~$*.pptx
+~$*.doc
+~$*.xls
+~$*.ppt
+*.tmp
+
+# ---------------- 本项目临时与预览产物 ----------------
+# 渲染预览目录（由 LibreOffice 渲染生成，无需入库）
+preview-*/
+chk-*/
+/covers/
+# 本地备份文件
+*_用户版备份.docx
+*.bak
+*~
+# 临时脚本与调试输出（下划线前缀为本项目约定）
+_*.py
+_*.txt
+_*.json
+run*.txt
+*_out.txt
+verify_out.txt
+final_report.txt
+
+# ---------------- 待定：二进制大文件 ----------------
+# 原始高清 LOGO（1.9MB）。如需入库请删除下一行注释。
+# logo.png
