@@ -1,0 +1,28 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "types": ["vite/client"],
+    "allowArbitraryExtensions": true,
+
+    /* ---------- 路径别名 ----------
+       TS 6.0 起 baseUrl 已废弃，paths 直接相对于本 tsconfig 所在目录解析。 */
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
+    /* ---------- 类型安全（对应 docs/ARCHITECTURE.md 第 3 节）----------
+       说明：@vue/tsconfig/tsconfig.dom.json 已开启 strict 与 noImplicitAny，
+             此处补充更严格的检查项。 */
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+
+    /* ---------- Linting ---------- */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "tests/**/*.ts"]
+}

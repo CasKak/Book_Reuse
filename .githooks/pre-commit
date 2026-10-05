@@ -1,0 +1,45 @@
+#!/bin/sh
+#
+# pre-commit 钩子：提交前扫描敏感信息
+#
+# 启用方式（在仓库根目录执行一次）：
+#   git config core.hooksPath .githooks
+#
+# 为什么需要：
+#   仅靠 .gitignore 无法阻止已经存在的文件被提交，也无法阻止把密钥
+#   写进源码。本钩子在提交前扫描暂存内容，命中即阻断。
+#
+# 跳过方式（仅在确认无敏感信息时使用，并需说明原因）：
+#   git commit --no-verify
+
+echo "[pre-commit] 扫描敏感信息..."
+
+# 优先使用 Windows 的 py 启动器，其次 python3 / python
+if command -v py >/dev/null 2>&1; then
+  PYTHON=py
+elif command -v python3 >/dev/null 2>&1; then
+  PYTHON=python3
+elif command -v python >/dev/null 2>&1; then
+  PYTHON=python
+else
+  echo "[pre-commit] 未找到 Python，跳过敏感信息扫描"
+  echo "[pre-commit] 提示：安装 Python 后可启用该检查，或手动执行 python scan_secrets.py"
+  exit 0
+fi
+
+if [ ! -f scan_secrets.py ]; then
+  echo "[pre-commit] 未找到 scan_secrets.py，跳过扫描"
+  exit 0
+fi
+
+"$PYTHON" scan_secrets.py
+status=$?
+
+if [ $status -ne 0 ]; then
+  echo ""
+  echo "[pre-commit] 提交已被阻断：请移除上述敏感信息，"
+  echo "[pre-commit] 或将真实配置移入 .env.local（该文件已被 .gitignore 忽略）。"
+  exit 1
+fi
+
+exit 0

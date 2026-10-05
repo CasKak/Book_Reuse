@@ -10,8 +10,89 @@
 ## [未发布]
 
 ### 计划中
-- 阶段 1：Vue 3 + TypeScript + Vite 工程初始化（预计 `v0.2.0`）
-- 阶段 2：Supabase 迁移 SQL + RLS 策略 + 种子数据（预计 `v0.3.0`）
+- 阶段 2：Supabase 迁移 SQL（24 表）+ RLS 策略 + 种子数据（预计 `v0.3.0`）
+- 阶段 3：认证与用户档案模块
+
+---
+
+## [v0.2.0] - 2026-10-06
+
+**主题：阶段 1 —— Vue 3 + TypeScript + Vite 工程初始化**
+
+### 新增
+- **前端工程骨架**（Vue 3.5.42 + TypeScript 6.0.2 + Vite 8.3.0）
+  - Element Plus 2.14.7（含中文语言包）
+  - Pinia 4.0.3 状态管理
+  - Vue Router 5.3.1（懒加载路由 + 全局守卫）
+  - Tailwind CSS 3.4.19（关闭 preflight 以兼容 Element Plus）
+  - Zod 4.6.5 运行时校验
+- **Feature-Sliced Design 目录结构**
+  - `src/app` 应用装配（路由、全局 store、样式）
+  - `src/pages` 页面层（首页、404）
+  - `src/widgets` / `src/features` / `src/entities` 占位待填充
+  - `src/shared` 基础设施（api / config / lib）
+- **Supabase 客户端接入**（`src/shared/api/supabase.ts`）
+  - 懒加载单例，避免无环境变量时导入即抛错
+  - 配置会话持久化与自动续期
+  - 提供 `checkDatabaseHealth()` 连通性探测
+  - `database.types.ts` 占位类型，阶段 2 用 `supabase gen types` 替换
+- **环境变量校验**（`src/shared/config/env.ts`）
+  - Zod 运行时校验，缺失或格式错误给出中文排错指引
+  - 校验 URL 必须为 https 且结尾不带斜杠
+  - 类型声明 `src/vite-env.d.ts` 限定只有可公开变量
+- **严格类型安全配置**
+  - `tsconfig` 开启 `noUncheckedIndexedAccess`、`noImplicitOverride`、`noImplicitReturns`
+  - ESLint 禁止 `any`、禁止 `@ts-ignore`、强制 `import type`
+  - ESLint 强制 FSD 依赖方向与切片公共出口
+- **Element Plus 品牌主题**（`src/app/styles/element-theme.css`）
+  - 主色改为品牌深绿 `#1f7a5c`，与 LOGO 一致
+  - 覆盖各亮度派生色，保证 hover/disabled 状态一致
+- **工程自检首页**（`src/pages/home/index.vue`）
+  - 验证 Vue + 路由、Tailwind、Element Plus、Pinia、Supabase 五条链路
+  - 品牌首屏、核心业务闭环、四大价值主张
+  - 非生产环境显示环境角标
+- **单元测试**（Vitest 5.0.3）
+  - `tests/unit/shared/cn.test.ts` —— 类名合并工具（7 个用例）
+  - `tests/unit/shared/money.test.ts` —— 金额格式化与分/元转换（11 个用例）
+- **工具与规范**
+  - `.githooks/pre-commit` —— 提交前自动扫描敏感信息，命中即阻断
+  - `.prettierrc.json` + `.prettierignore` —— 统一代码格式
+  - `vitest.config.ts` —— 独立测试配置（Vite 8 的 defineConfig 类型不含 test 字段）
+  - `README.md` —— 完整交接文档（快速开始、目录结构、规范、进度）
+  - `.env.example` 补充详细的密钥安全说明
+
+### 变更
+- **许可证由 GPL-3.0 更换为 MIT**
+  - 原因：GPL-3.0 具传染性，会强制平台代码开源，与商业化目标冲突
+  - 影响：允许闭源使用与商业分发，仅需保留版权声明
+- `package.json` 更名 `qingyue-cycle`，版本 `0.2.0`，补齐 lint/format/test/typecheck 脚本
+- `.gitignore` 补充 `dist/`、`coverage/`、`.vite/`、`*.tsbuildinfo` 等前端产物
+
+### 修复
+- 修正 `src/app/stores/app.ts` 注释中 `entities/*/model` 提前闭合块注释导致的语法错误
+- `vite.config.ts` 的 `manualChunks` 由对象改为函数形式（Vite 8 / rolldown 不支持对象形式）
+- `tsconfig.app.json` 移除已废弃的 `baseUrl`（TypeScript 6.0 起报错）
+- 路由组件导入改为显式 `index.vue` 路径，避免 TS 无法解析目录导入
+- 关闭 `eslint-plugin-vue` 的排版类规则，交由 Prettier 统一负责
+
+### 安全
+- 确认 `.env.local` 被 `.gitignore` 忽略，`git check-ignore` 验证通过
+- 提交前敏感信息扫描通过（0 处真实密钥）
+- Git 配置全局代理 `http://127.0.0.1:7897`，解决 GitHub 间歇不可达
+
+### 验证结果
+| 检查项 | 结果 |
+|---|---|
+| `pnpm typecheck` | 通过（0 错误） |
+| `pnpm lint` | 通过（0 error / 0 warning） |
+| `pnpm format:check` | 通过 |
+| `pnpm test` | 18 个用例全部通过 |
+| `pnpm build` | 构建成功，首屏 gzip 约 40 KB |
+| 浏览器实测 | 首页正常渲染，Supabase 显示「已连接」 |
+
+### 已知问题
+- Element Plus 全量引入导致该 chunk 约 985 KB（gzip 317 KB），后续改为按需引入优化
+- 数据库尚未创建任何表，业务功能需等阶段 2 迁移完成
 
 ---
 

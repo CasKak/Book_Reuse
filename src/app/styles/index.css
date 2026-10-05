@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * 全局基础样式
+ *
+ * 注意：Tailwind 的 preflight 已在 tailwind.config.js 中关闭，
+ *       以避免重置 Element Plus 组件样式。因此这里手写最小必要的 base 规则。
+ */
+
+@layer base {
+  :root {
+    /* 品牌色变量，供非 Tailwind 场景（如内联样式、Element Plus 覆盖）使用 */
+    --qy-brand: #1f7a5c;
+    --qy-brand-light: #f0f9f4;
+    --qy-text: #1f2329;
+    --qy-text-secondary: #595959;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* 移动端点击高亮去掉，避免学生端点击出现灰色块 */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: var(--qy-text);
+    background-color: #f7f8fa;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* 继承性字体设置：Element Plus 组件与后续替换为原生标签的元素保持一致 */
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+  }
+
+  /* 链接默认不带下划线，符合国内产品习惯 */
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  #app {
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* 内容容器：与 docs/page-list.md 的 max-width 约定一致 */
+  .qy-container {
+    @apply mx-auto w-full max-w-content px-4 sm:px-6 lg:px-8;
+  }
+
+  /* 卡片：后台与学生端通用 */
+  .qy-card {
+    @apply rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6;
+  }
+}
