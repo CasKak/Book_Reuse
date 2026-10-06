@@ -183,7 +183,7 @@ export async function updateProfile(
 export async function submitStudentVerification(userId: string): Promise<ProfileRow> {
   const client = getSupabaseClient()
 
-  return run(
+  return run<ProfileRow>(
     client
       .from('profiles')
       .update({ verify_status: 'pending' })
@@ -201,7 +201,7 @@ export async function submitStudentVerification(userId: string): Promise<Profile
 export async function fetchSchools(): Promise<SchoolRow[]> {
   const client = getSupabaseClient()
 
-  const result = await runOrNull(
+  const result = await runOrNull<SchoolRow[]>(
     client.from('schools').select('*').eq('is_active', true).order('name'),
   )
 
@@ -212,7 +212,7 @@ export async function fetchSchools(): Promise<SchoolRow[]> {
 export async function fetchMajors(schoolId: string): Promise<MajorRow[]> {
   const client = getSupabaseClient()
 
-  const result = await runOrNull(
+  const result = await runOrNull<MajorRow[]>(
     client.from('majors').select('*').eq('school_id', schoolId).order('name'),
   )
 
@@ -232,7 +232,7 @@ export async function fetchCourses(
     query = query.eq('major_id', majorId)
   }
 
-  const result = await runOrNull(query.order('name'))
+  const result = await runOrNull<CourseRow[]>(query.order('name'))
 
   return result ?? []
 }
@@ -245,7 +245,7 @@ export async function fetchCourses(
 export async function fetchMyAddresses(userId: string): Promise<AddressRow[]> {
   const client = getSupabaseClient()
 
-  const result = await runOrNull(
+  const result = await runOrNull<AddressRow[]>(
     client
       .from('user_addresses')
       .select('*')
@@ -264,7 +264,7 @@ export async function createAddress(
 ): Promise<AddressRow> {
   const client = getSupabaseClient()
 
-  return run(
+  return run<AddressRow>(
     client
       .from('user_addresses')
       .insert({
@@ -287,7 +287,7 @@ export async function updateAddress(
 ): Promise<AddressRow> {
   const client = getSupabaseClient()
 
-  return run(
+  return run<AddressRow>(
     client
       .from('user_addresses')
       .update({

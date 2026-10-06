@@ -2,18 +2,19 @@
  * 应用入口
  *
  * 初始化顺序（不要随意调整）：
- *   1. 全局样式（Tailwind base + Element Plus 主题变量覆盖）
- *   2. Element Plus 组件库（中文语言包）
- *   3. Pinia（路由守卫中要用到 store，必须在 router 之前注册）
- *   4. 会话初始化与认证状态订阅
- *   5. 路由并挂载
+ *   1. 全局样式（品牌变量 + Tailwind；Element Plus 主题由 SCSS 编译期注入）
+ *   2. Pinia（路由守卫中要用到 store，必须在 router 之前注册）
+ *   3. 会话初始化与认证状态订阅
+ *   4. 路由并挂载
+ *
+ * 与阶段 1 的差异：
+ *   · 不再 import ElementPlus 与 'element-plus/dist/index.css'
+ *     —— 改为按需引入，见 src/app/plugins/element-plus.ts 与 vite.config.ts
+ *   · 中文语言包改由 App.vue 的 <el-config-provider :locale="zhCn"> 提供
  */
 import { createApp } from 'vue'
-import ElementPlus from 'element-plus'
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
-import 'element-plus/dist/index.css'
-import '@/app/styles/element-theme.css'
+import '@/app/styles/theme.css'
 import '@/app/styles/index.css'
 
 import App from '@/App.vue'
@@ -25,7 +26,6 @@ const app = createApp(App)
 
 app.use(pinia)
 app.use(router)
-app.use(ElementPlus, { locale: zhCn })
 
 const userStore = useUserStore(pinia)
 
@@ -34,7 +34,7 @@ const userStore = useUserStore(pinia)
 //   · 用户在其它标签页登出时本页同步退出
 userStore.subscribeAuthChanges()
 
-// 启动时初始化会话。此处 await 会阻塞首屏，因此不等待；
+// 启动时初始化会话。此处不 await，避免阻塞首屏；
 // 路由守卫在首次进入受保护页面时会再次确保初始化完成。
 void userStore.initializeSession()
 

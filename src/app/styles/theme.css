@@ -1,0 +1,33 @@
+/**
+ * 品牌主题变量
+ *
+ * 分工说明：
+ *   · element-theme.scss —— 编译期重设 Element Plus 的 $colors，
+ *     让 primary / light-3 / light-5 等派生色一并按品牌色生成
+ *   · 本文件 —— 运行期对外暴露的 CSS 变量，供 Tailwind 与自定义样式引用，
+ *     保证「Element Plus 组件」与「手写样式」取到同一套色值
+ */
+
+:root {
+  /* ---------- 品牌主色（取自 LOGO 深绿）---------- */
+  --qy-brand-50: #f0f9f4;
+  --qy-brand-100: #dcf2e4;
+  --qy-brand-200: #bbe5cd;
+  --qy-brand-300: #8dd0ae;
+  --qy-brand-400: #58b489;
+  --qy-brand-500: #35986c;
+  --qy-brand-600: #257a56;
+  --qy-brand-700: #1f7a5c;
+  --qy-brand-800: #1a5c46;
+  --qy-brand-900: #164c3b;
+
+  /* ---------- 文本色 ---------- */
+  --qy-text: #1f2329;
+  --qy-text-secondary: #595959;
+  --qy-text-muted: #86909c;
+
+  /* ---------- 背景与边框 ---------- */
+  --qy-bg-page: #f7f8fa;
+  --qy-bg-card: #ffffff;
+  --qy-border: #e5e6eb;
+}

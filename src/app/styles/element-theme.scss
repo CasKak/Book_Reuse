@@ -1,0 +1,53 @@
+/**
+ * Element Plus 主题变量覆盖（SCSS 源码方式）
+ *
+ * 为什么用 SCSS 而不是原来的 CSS 变量方式：
+ *   按需引入后，组件样式由 unplugin-vue-components 以 SCSS 源码注入。
+ *   此时若仍用 :root { --el-color-primary: ... } 覆盖，会出现
+ *   「基础色变了但 light-3 / light-5 等派生色仍是默认蓝」的问题——
+ *   因为派生色在编译期由 $colors map 生成，运行期改 CSS 变量改不到它们。
+ *
+ *   因此这里在 SCSS 编译前重设 $colors，让派生色一并按品牌色重新生成。
+ *
+ * 注入方式：vite.config.ts 的 css.preprocessorOptions.scss.additionalData
+ *           会把本文件 @use 到每个 SCSS 入口之前，因此**不要**在这里写具体样式规则。
+ */
+
+// 覆盖 Element Plus 的调色板与基础变量。
+// 注意：@forward ... with 只能在所有 @use 之前出现一次，
+//       因此本文件必须整体作为「配置层」，不产出任何 CSS。
+@forward 'element-plus/theme-chalk/src/common/var.scss' with (
+  $colors: (
+    'primary': (
+      'base': #1f7a5c,
+    ),
+    'success': (
+      'base': #35986c,
+    ),
+    'warning': (
+      'base': #e6a23c,
+    ),
+    'danger': (
+      'base': #f56c6c,
+    ),
+    'error': (
+      'base': #f56c6c,
+    ),
+    'info': (
+      'base': #909399,
+    ),
+  ),
+  $border-radius: (
+    'base': 6px,
+  ),
+  $font-family: (
+    '': (
+      '"PingFang SC"',
+      '"Microsoft YaHei"',
+      '"Helvetica Neue"',
+      Helvetica,
+      Arial,
+      sans-serif,
+    ),
+  )
+);

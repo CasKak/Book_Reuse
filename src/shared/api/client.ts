@@ -190,33 +190,49 @@ export function toApiError(error: unknown): ApiError {
   return new ApiError({ kind: 'unknown', userMessage: '发生未知错误', cause: error })
 }
 
-/** Supabase 查询/调用的返回结构（只取我们关心的两个字段） */
-interface PostgrestLikeResult<T> {
-  data: T | null
-  error: PostgrestError | null
+/**
+ * Supabase 查询构造器 / 响应对象的运行期结构
+ *
+ * ⚠️ 类型设计说明（经过多轮实测与试错，改动前请务必读完）
+ * ---------------------------------------------------------------------------
+ * 实测结论（用类型探针逐一验证过）：
+ *   · supabase-js 的查询构造器（PostgrestFilterBuilder）**本身不含 data/error**，
+ *     这两个字段只出现在 await 之后的响应对象上；
+ *   · 各种查询 await 后的形状统一为 PostgrestSingleResponse<D>：
+ *       select('*')                        → D = Row[]
+ *       select('*').eq(...)                → D = Row[]
+ *       select('*').eq(...).single()       → D = Row
+ *       select('*').eq(...).maybeSingle()  → D = Row | null
+ *   · 因此「从构造器自动推导 D」需要依赖 postgrest-js 内部的复杂泛型，
+ *     而它的 `then` 把 onrejected 声明为 `(reason: any)`，任何自建约束都会
+ *     在协变/逆变比较中失败，并把泛型推断退化为 never / {}。
+ *
+ * 最终方案（简单、可预测、不需要与 SDK 泛型搏斗）：
+ *   · 本模块用**结构化强转**完成「await → 校验 error → 返回 data」，
+ *     不做自动类型推导；
+ *   · 调用方显式声明数据类型，把「运行时形状」与「静态类型」对齐：
+ *       const rows = await run<ListingRow[]>(client.from('listings').select('*'))
+ *       const one  = await run<ProfileRow>(client.from('profiles')...single())
+ *       const opt  = await runOrNull<ProfileRow>(client.from('profiles')...maybeSingle())
+ *
+ * 这样做的代价是调用处要写一次类型参数；收益是类型行为完全确定性，
+ * 不会出现「改一行查询就报莫名 never 错误」的情况。
+ * ---------------------------------------------------------------------------
+ */
+interface QueryResultLike {
+  readonly data: unknown
+  readonly error: PostgrestError | null
 }
 
-/** PostgrestFilterBuilder 等 thenable 查询对象 */
-type Thenable<T> = PromiseLike<PostgrestLikeResult<T>>
+/** 可 await 的查询对象（运行时是 thenable；编译期只关心 await 结果） */
+type AnyQuery = PromiseLike<QueryResultLike> | QueryResultLike
 
-/**
- * 执行一次 Supabase 查询，失败时抛出 ApiError。
- *
- * @param query 已构造但未执行的查询（thenable）
- * @param options.allowNull 为 true 时 data 允许为 null（如 maybeSingle）
- * @returns 查询结果数据
- * @throws {ApiError} 查询失败，或 data 为 null 且未允许
- *
- * @example
- * const profile = await run(
- *   client.from('profiles').select('*').eq('id', uid).single(),
- * )
- */
-export async function run<T>(query: Thenable<T>, options?: { allowNull?: boolean }): Promise<T> {
-  let result: PostgrestLikeResult<T>
+/** 把查询结果做统一校验，返回 data 或抛出 ApiError */
+async function unwrap(query: AnyQuery, options?: { allowNull?: boolean }): Promise<unknown> {
+  let result: QueryResultLike
 
   try {
-    result = await query
+    result = await (query as PromiseLike<QueryResultLike>)
   } catch (error) {
     // 网络层异常不会走 error 字段
     throw toApiError(error)
@@ -230,17 +246,37 @@ export async function run<T>(query: Thenable<T>, options?: { allowNull?: boolean
     throw new ApiError({ kind: 'not_found', userMessage: '未找到相关数据' })
   }
 
-  return result.data as T
+  return result.data
 }
 
 /**
- * 执行一次 Supabase 查询，失败时返回 null 而不抛错。
+ * 执行一次 Supabase 查询，失败时抛出 ApiError。
  *
- * 适用场景：可选数据（如「当前用户是否已收藏」），失败不应阻断主流程。
+ * ⚠️ 需要显式传入数据类型 T（原因见本文件顶部的类型设计说明）：
+ *   · 列表查询传 `T[]`；单行查询（.single()）传 `T`
+ *
+ * @example
+ * const rows = await run<ListingRow[]>(client.from('listings').select('*'))
+ * const one  = await run<ProfileRow>(client.from('profiles').select('*').eq('id', id).single())
  */
-export async function runOrNull<T>(query: Thenable<T>): Promise<T | null> {
+export async function run<T>(query: AnyQuery): Promise<T> {
+  return (await unwrap(query)) as T
+}
+
+/**
+ * 执行一次 Supabase 查询，失败或为空时返回 null 而不抛错。
+ *
+ * 适用场景：
+ *   · 可选数据（如「当前用户是否已收藏」）
+ *   · 使用 maybeSingle() 的查询，无结果属正常情况
+ *
+ * @example
+ * const row = await runOrNull<ProfileRow>(client.from('profiles').select('*').eq('id', id).maybeSingle())
+ * const list = await runOrNull<SchoolRow[]>(client.from('schools').select('*'))
+ */
+export async function runOrNull<T>(query: AnyQuery): Promise<T | null> {
   try {
-    return await run(query, { allowNull: true })
+    return (await unwrap(query, { allowNull: true })) as T | null
   } catch {
     return null
   }

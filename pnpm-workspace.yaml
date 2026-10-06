@@ -1,0 +1,12 @@
+# pnpm 配置
+#
+# 说明：pnpm 11 起，原先写在 package.json 的 "pnpm" 字段不再被读取，
+#       相关设置统一迁移到本文件。保留本文件可避免每次 install 都出现
+#       [ERR_PNPM_IGNORED_BUILDS] 使命令以退出码 1 结束。
+#
+# allowBuilds —— 是否批准依赖包自带的构建脚本：
+#   '@parcel/watcher' 由 sass 间接引入，仅在其 CLI 的 watch 模式使用。
+#   本项目通过 Vite 插件调用 sass，不依赖该原生模块，
+#   因此设为 false（不构建），既消除报错也避免多余的原生编译。
+allowBuilds:
+  '@parcel/watcher': false

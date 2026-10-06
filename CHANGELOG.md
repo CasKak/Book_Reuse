@@ -9,8 +9,21 @@
 
 ## [未发布]
 
+### 阶段 4（进行中）
+- **Element Plus 改为按需引入**（已完成）
+  - 用 `unplugin-vue-components` + `ElementPlusResolver` 替代全量引入
+  - 主题改用 SCSS 源码覆盖（`@forward ... with ($colors: ...)`），
+    使 primary / light-3 / light-5 等派生色一并按品牌色生成；
+    原先的 CSS 变量方式改不到编译期生成的派生色
+  - 语言包改由 `App.vue` 的 `<el-config-provider :locale="zhCn">` 提供
+  - **构建产物体积：985 KB → 353 KB（-64%），gzip 317 KB → 122 KB**
+  - CSS 产物：361 KB → 100 KB（gzip 48 KB → 14 KB）
+- **新增 book 实体**：品相/交易类型展示映射、书目视图模型、折扣计算
+- **新增 listing 实体**：挂牌视图模型、状态展示、市场查询层
+- **重建 `run` / `runOrNull` 的类型契约**（见下方「修复」）
+
 ### 计划中
-- 阶段 4：图书市场与详情页（同时把 Element Plus 改为按需引入）
+- 阶段 4 剩余：图书市场页、图书详情页、搜索与筛选组件
 - 阶段 5：发布/回收流程（含 AI 品相识别占位）
 
 ---

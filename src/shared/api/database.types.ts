@@ -86,6 +86,13 @@ type Timestamps = {
  *    `Record<string, unknown>`。interface 没有隐式索引签名，无法满足该约束，
  *    会导致所有查询的入参类型退化为 never（表现为「参数不能赋给 never」编译错误）。
  *
+ * 📌 关于 Relationships 数组：
+ *    当前各表均为 `Relationships: []`，即**不使用 PostgREST 的嵌套查询**
+ *    （如 select('*, books(*)')）。原因与替代方案见 src/entities/listing/api/queries.ts
+ *    顶部说明：嵌套查询要求 Relationships 精确描述每个外键，手工维护易与迁移脱节；
+ *    本项目改为「两次查询 + 应用层合并」，类型完全由显式接口约束，更可控。
+ *    若将来改用 `supabase gen types` 生成类型，可自然获得嵌套查询能力。
+ *
  * 表的分组顺序与 supabase/migrations 保持一致，便于对照排查。
  */
 export type Database = {

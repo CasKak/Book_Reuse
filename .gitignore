@@ -93,6 +93,9 @@ desktop.ini
 preview-*/
 chk-*/
 /covers/
+# Supabase CLI 的本地状态与临时文件
+supabase/.temp/
+supabase/.branches/
 # 本地备份文件
 *_用户版备份.docx
 *.bak

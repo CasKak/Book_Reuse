@@ -3,6 +3,8 @@
  * 应用根组件
  *
  * 结构：
+ *   · el-config-provider：提供 Element Plus 中文语言包
+ *     （按需引入后不再有全局 app.use(ElementPlus)，语言包改由此处配置）
  *   · 顶部品牌栏：LOGO、导航、登录态（头像 / 昵称 / 下拉菜单）
  *   · 内容区：RouterView
  *   · 页脚：宣传语
@@ -12,6 +14,7 @@
  */
 import { computed } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
 import { useAppStore } from '@/app/stores/app'
 import { LogoutButton } from '@/features'
@@ -37,7 +40,8 @@ const avatarText = computed<string>(() => profileVm.value?.nickname.slice(0, 1) 
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col">
+  <el-config-provider :locale="zhCn">
+    <div class="flex min-h-screen flex-col">
     <!-- ===================== 顶部品牌栏 ===================== -->
     <header class="sticky top-0 z-10 border-b border-gray-200 bg-white/95 backdrop-blur">
       <div class="qy-container flex h-14 items-center justify-between gap-4">
@@ -111,5 +115,6 @@ const avatarText = computed<string>(() => profileVm.value?.nickname.slice(0, 1) 
         <p class="mt-2 text-xs text-gray-400">青阅循环 · 校园二手图书智能循环与生态服务平台</p>
       </div>
     </footer>
-  </div>
+    </div>
+  </el-config-provider>
 </template>
