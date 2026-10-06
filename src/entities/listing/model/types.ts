@@ -47,10 +47,7 @@ export function describeListingStatus(status: ListingStatus): ListingStatusDispl
  *
  * @returns 形如「3.2 折」；缺定价或缺售价时返回 null（界面不展示折扣）
  */
-export function formatDiscount(
-  price: number | null,
-  listPrice: number | null,
-): string | null {
+export function formatDiscount(price: number | null, listPrice: number | null): string | null {
   if (price === null || listPrice === null || listPrice <= 0 || price <= 0) {
     return null
   }

@@ -266,9 +266,7 @@ export async function fetchMarketListings(
  *
  * @returns 挂牌与书目；不存在或无权访问时返回 null
  */
-export async function fetchListingDetail(
-  listingId: string,
-): Promise<ListingWithBook | null> {
+export async function fetchListingDetail(listingId: string): Promise<ListingWithBook | null> {
   const client = getSupabaseClient()
 
   const listing = await runOrNull<ListingRow>(

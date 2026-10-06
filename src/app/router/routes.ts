@@ -14,6 +14,8 @@ import type { RouteRecordRaw } from 'vue-router'
 /** 路由名称常量，避免在代码中散落字符串 */
 export const ROUTE_NAMES = {
   home: 'home',
+  market: 'market',
+  bookDetail: 'book-detail',
   login: 'login',
   register: 'register',
   forgotPassword: 'forgot-password',
@@ -47,6 +49,18 @@ export const routes: RouteRecordRaw[] = [
     name: ROUTE_NAMES.home,
     component: () => import('@/pages/home/index.vue'),
     meta: { title: '首页' },
+  },
+  {
+    path: '/market',
+    name: ROUTE_NAMES.market,
+    component: () => import('@/pages/market/index.vue'),
+    meta: { title: '图书市场' },
+  },
+  {
+    path: '/book/:id',
+    name: ROUTE_NAMES.bookDetail,
+    component: () => import('@/pages/book-detail/index.vue'),
+    meta: { title: '图书详情' },
   },
 
   // ---------------------------------------------------------------- 认证区

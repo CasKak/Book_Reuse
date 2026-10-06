@@ -141,9 +141,7 @@ export function toBookViewModel(row: BookRow): BookViewModel {
     title: row.title,
     author: row.author?.trim() !== undefined && row.author.trim() !== '' ? row.author : UNKNOWN,
     publisher:
-      row.publisher?.trim() !== undefined && row.publisher.trim() !== ''
-        ? row.publisher
-        : UNKNOWN,
+      row.publisher?.trim() !== undefined && row.publisher.trim() !== '' ? row.publisher : UNKNOWN,
     listPrice: row.list_price,
     coverUrl: row.cover_url,
     categoryId: row.category_id,
